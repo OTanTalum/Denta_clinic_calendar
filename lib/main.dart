@@ -1,9 +1,20 @@
 import 'package:denta_clinic/Pages/CalendarPage.dart';
+import 'package:denta_clinic/Providers/TimerProviser.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:provider/provider.dart';
+import 'package:flutter/foundation.dart';
 
 void main() {
-  runApp(MyApp());
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => TimerProvider()),
+      ],
+    child: MyApp(),
+    )
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -13,13 +24,16 @@ class MyApp extends StatelessWidget {
       localizationsDelegates: [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
       ],
-      supportedLocales: [
-        const Locale('ru'),
-        const Locale('uk'),
+
+        supportedLocales: [
+          const Locale('en'), // English
+          const Locale('ru'), // Hebrew
+          const Locale('uk'), // Chinese *See Advanced Locales below*
       ],
       debugShowCheckedModeBanner: false,
-      locale: const Locale('uk'),
+      //locale: const Locale('uk'),
       title: 'My Dental Clinic',
       theme: ThemeData(
         primarySwatch: Colors.deepOrange,

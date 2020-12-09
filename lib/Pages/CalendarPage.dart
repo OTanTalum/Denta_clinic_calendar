@@ -1,6 +1,8 @@
 import 'package:denta_clinic/Models/Event.dart';
+import 'package:denta_clinic/Providers/TimerProviser.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
 
 class CalendarPage extends StatefulWidget {
@@ -18,7 +20,6 @@ class _CalendarPageState extends State<CalendarPage> {
     String name='';
     String phone='';
 
-    var meetings = <Event>[];
 
   @override
   void initState() {
@@ -52,7 +53,7 @@ class _CalendarPageState extends State<CalendarPage> {
             startHour: 6,
             endHour: 22,
           ),
-          dataSource: MeetingDataSource(meetings),
+          dataSource: MeetingDataSource(Provider.of<TimerProvider>(context).meetings),
           onLongPress: (CalendarLongPressDetails details) =>
               createNewEvent(details, context),
         ));
@@ -60,21 +61,21 @@ class _CalendarPageState extends State<CalendarPage> {
 
 
   void createNewEvent(CalendarLongPressDetails details, context) {
+    DateTime numb;
+    Provider.of<TimerProvider>(context, listen: false).setStartTime(details.date);
+    print(Provider.of<TimerProvider>(context, listen: false).startTime);
     showDialog(
       context: context,
       builder: (_) =>
-      new AlertDialog(
+      AlertDialog(
         title: new Text(
           "Створити нову зустріч",
           style: TextStyle(
-            color: Colors.deepOrange,
+            color: Colors.black,
+            fontSize: 24
           ),
         ),
-        content: Container(
-          height: MediaQuery
-              .of(context)
-              .size
-              .height * 0.4,
+        content: SingleChildScrollView(
           child: Column(mainAxisAlignment: MainAxisAlignment.start, children: [
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 16.0),
@@ -83,19 +84,60 @@ class _CalendarPageState extends State<CalendarPage> {
             buildTextField("Прізвище", surNameController),
             buildTextField("Ім'я", nameController),
             buildTextField("Номер телефону", phoneController),
+             SizedBox(height: 12,),
+             RaisedButton(
+                  textColor: Colors.white,
+                  color: Colors.black,
+                  child: Container(
+                    width: MediaQuery.of(context).size.width*0.5,
+                    height: 48,
+                    child:Center(child: Text("Назначити годину")),
+                  ),
+                  onPressed: () async {
+                    numb = await  buildTimePicker(details.date);
+                    Provider.of<TimerProvider>(context, listen: false).setStartTime(numb);
+                    print("___${Provider.of<TimerProvider>(context, listen: false).startTime}");
+                  },
+                  shape: new RoundedRectangleBorder(
+                    borderRadius: new BorderRadius.circular(10.0),
+                  ),
+            ),
           ]),
         ),
         actions: <Widget>[
           FlatButton(
             child: Text('Готово'),
             onPressed: () {
-              _getDataSource(details);
+              _getDataSource();
               Navigator.of(context).pop();
             },
           )
         ],
       ),
     );
+  }
+
+  buildTimePicker( DateTime time) async {
+    DateTime startTime=null;
+    return await showModalBottomSheet(
+        context: context,
+        builder: (BuildContext context) {
+          return Container(
+              height: 300,
+              child: CupertinoTimerPicker(
+                mode: CupertinoTimerPickerMode.hm,
+                minuteInterval: 1,
+                secondInterval: 1,
+                initialTimerDuration: Duration(hours: time.hour),
+                onTimerDurationChanged: (Duration changedTimer) {
+                    startTime = new DateTime(time.year, time.month, time.day, changedTimer.inHours, changedTimer.inMinutes%60);
+                },
+              )
+          );
+        }
+    ).then((value) {
+      return startTime;
+    });
   }
 
   buildTextField(String hint, TextEditingController controller) {
@@ -109,17 +151,17 @@ class _CalendarPageState extends State<CalendarPage> {
             width: 16,
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.all(Radius.circular(25)),
-            borderSide: BorderSide(color: Colors.deepOrange, width: 3.0),
+            borderRadius: BorderRadius.all(Radius.circular(10)),
+            borderSide: BorderSide(color: Colors.black, width: 3.0),
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.all(Radius.circular(25)),
+            borderRadius: BorderRadius.all(Radius.circular(10)),
             borderSide: BorderSide(
-                color: Colors.deepOrange,
+                color: Colors.black,
                 width: 1.0),
           ),
           hintStyle: TextStyle(
-            color: Colors.orange,
+            color: Colors.black12,
           ),
           hintText: hint,
         ),
@@ -133,16 +175,9 @@ class _CalendarPageState extends State<CalendarPage> {
     );
   }
 
-  List<Event> _getDataSource(CalendarLongPressDetails details) {
-    print(details.date);
-    final DateTime today = DateTime.now();
-    final DateTime startTime = details.date;
-   // DateTime(today.year, today.month, today.day, 9, 0, 0);
-    final DateTime endTime = startTime.add(const Duration(hours: 1));
-    meetings.add(
-        Event(
-            'Сеанс', startTime, endTime, const Color(0xFF0F8644), false));
-    return meetings;
+  List<Event> _getDataSource() {
+    DateTime time =  Provider.of<TimerProvider>(context, listen: false).startTime;
+    Provider.of<TimerProvider>(context, listen: false).addEvent(time);
   }
 }
 
