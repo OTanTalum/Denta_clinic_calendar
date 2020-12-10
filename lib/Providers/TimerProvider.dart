@@ -1,7 +1,8 @@
 import 'package:denta_clinic/Models/Event.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:provider/provider.dart';
 
-class TimerProvider with ChangeNotifier {
+class TimerProvider with ChangeNotifier{
 
   DateTime startTime;
   List<Event> meetings=[];
@@ -16,8 +17,8 @@ class TimerProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  addEvent(time){
-    DateTime endTime = time.add(const Duration(hours: 1));
+  addEvent(time, duration){
+    DateTime endTime = time.add( Duration(minutes: duration));
     meetings.add(
         Event(
             'Сеанс', time, endTime, const Color(0xFF0F8644), false));
