@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "478781549663",
+    "firebase_url": "https://denta-clinic-6a35c-default-rtdb.europe-west1.firebasedatabase.app",
+    "project_id": "denta-clinic-6a35c",
+    "storage_bucket": "denta-clinic-6a35c.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:478781549663:android:1b22d1d4b3c682ba097fea",
+        "android_client_info": {
+          "package_name": "com.tantalum.denta_clinic"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "478781549663-d38a64p40e4aqdkg5blgrc2df9q58hfg.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBmgzIg5LaLktUFooQhnpHqGk2ksrNgXOs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "478781549663-d38a64p40e4aqdkg5blgrc2df9q58hfg.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

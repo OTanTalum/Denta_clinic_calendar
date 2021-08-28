@@ -1,11 +1,17 @@
-import 'package:denta_clinic/Models/Event.dart';
+
+import 'package:denta_clinic/Models/DentaEvent.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:provider/provider.dart';
 
 class TimerProvider with ChangeNotifier{
 
   DateTime startTime;
-  List<Event> meetings=[];
+  List<DentaEvent> meetings=[];
+
+  initMeetings(DentaEvent newEvent){
+
+    meetings.add(newEvent);
+    notifyListeners();
+  }
 
   setStartTime(value){
     startTime = value;
@@ -17,11 +23,24 @@ class TimerProvider with ChangeNotifier{
     notifyListeners();
   }
 
-  addEvent(time, duration){
-    DateTime endTime = time.add( Duration(minutes: duration));
-    meetings.add(
-        Event(
-            'Сеанс', time, endTime, const Color(0xFF0F8644), false));
+  getEvent(List<DentaEvent> list){
+    meetings = list;
     notifyListeners();
+  }
+
+  addEvent(name, surName, phone, time, duration){
+    DateTime endTime = time.add( Duration(minutes: duration));
+    DentaEvent newEvent;
+    newEvent = new DentaEvent(
+        name: name,
+        surName: surName,
+        phone: phone,
+        eventName: 'Сеанс',
+        from: time,
+        duration: duration.toString(),
+        to: endTime
+       );
+    meetings.add(newEvent);
+    return newEvent;
   }
 }

@@ -1,7 +1,9 @@
-import 'package:denta_clinic/Models/Event.dart';
+import 'package:denta_clinic/API/Storage.dart';
+import 'package:denta_clinic/Models/DentaEvent.dart';
 import 'package:denta_clinic/Providers/TimerProvider.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:provider/provider.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -12,16 +14,21 @@ class CalendarPage extends StatefulWidget {
 }
 
 class _CalendarPageState extends State<CalendarPage> {
+  final scaffoldState = GlobalKey<ScaffoldState>();
   TextEditingController surNameController = new TextEditingController();
   TextEditingController nameController = new TextEditingController();
   TextEditingController phoneController = new TextEditingController();
   TextEditingController durationController = new TextEditingController();
   ScrollController scrollController = new ScrollController();
+  PersistentBottomSheetController bscontroller;
 
   String surName = '';
   String name = '';
   String phone = '';
   String duration = '';
+
+  bool isOpen = false;
+
 
   @override
   void initState() {
@@ -29,6 +36,7 @@ class _CalendarPageState extends State<CalendarPage> {
     nameController.addListener(() => name = nameController.text);
     phoneController.addListener(() => phone = phoneController.text);
     durationController.addListener(() => duration = durationController.text);
+    Storage().loadEvent(context);
     super.initState();
   }
 
@@ -39,13 +47,15 @@ class _CalendarPageState extends State<CalendarPage> {
     phoneController.dispose();
     durationController.dispose();
     scrollController.dispose();
+     bscontroller.close();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        resizeToAvoidBottomPadding: false,
+      key: scaffoldState,
+       // resizeToAvoidBottomPadding: false,
         appBar: AppBar(
           leading: IconButton(
             onPressed: () => Navigator.pop(context),
@@ -58,15 +68,115 @@ class _CalendarPageState extends State<CalendarPage> {
         body: SfCalendar(
           firstDayOfWeek: 1,
           view: CalendarView.week,
+          showNavigationArrow: true,
           timeSlotViewSettings: TimeSlotViewSettings(
             startHour: 6,
             endHour: 22,
+            timeIntervalHeight: 75,
           ),
           dataSource:
               MeetingDataSource(Provider.of<TimerProvider>(context).meetings),
           onLongPress: (CalendarLongPressDetails details) =>
               createNewEvent(details),
+          onTap: (CalendarTapDetails details) async => {
+            await showDialogAction(details, context),
+          },
         ));
+  }
+
+  showDialogAction(CalendarTapDetails details, context){
+    DentaEvent meet;
+  if(details.appointments?.first==null){
+
+   if(bscontroller!=null){
+       try {
+         bscontroller.close();
+       }catch(e) {
+         print(e);
+       }
+         bscontroller=null;
+         return;
+   }
+  return;
+  }
+  else {
+    meet =  details.appointments.first;
+  }
+  bscontroller = scaffoldState.currentState
+      .showBottomSheet((context) =>
+      Container(
+        height: MediaQuery.of(context).size.height*0.3,
+        width: MediaQuery.of(context).size.width,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: new BorderRadius.only(
+              topLeft: const Radius.circular(25.0),
+              topRight: const Radius.circular(25.0),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.5),
+              spreadRadius: 5,
+              blurRadius: 7,
+              offset: Offset(0, 3), // changes position of shadow
+            ),
+          ],),
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(top:12.0),
+              child: Text("${meet.eventName}",
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w700,
+                )
+              ),
+            ),
+            _buildTime(meet.from, meet.to),
+            _buildTile(Icons.person, "${meet.surName[0].toUpperCase()}${meet.surName.substring(1)} ${meet.name[0].toUpperCase()}${meet.name.substring(1)} "),
+            _buildTile(Icons.phone, "${meet.phone}"),
+          ],
+        ),
+      )
+  );
+  }
+
+  _buildTime(from, to){
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 24, vertical: 18),
+       child: Row(
+          mainAxisAlignment: MainAxisAlignment.start,
+         children: [
+           Icon(Icons.access_time),
+           SizedBox(width: 15,),
+           Text("${(from.toString()).split(":")[0]}:${(from.toString()).split(":")[1]} - ${(to.toString()).split(" ")[1].split(":00.000")[0]}",
+               style: TextStyle(
+                 fontSize: 18,
+                 fontWeight: FontWeight.w400,
+               )
+           )
+         ],
+        ),
+    );
+  }
+
+  _buildTile(icon, value){
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 24, vertical: 18),
+       child: Row(
+          mainAxisAlignment: MainAxisAlignment.start,
+         children: [
+           Icon(icon),
+           SizedBox(width: 15,),
+           Text(value.toString(),
+               style: TextStyle(
+                 fontSize: 18,
+                 fontWeight: FontWeight.w400,
+               )
+           )
+         ],
+        ),
+    );
   }
 
   createNewEvent(CalendarLongPressDetails details) {
@@ -88,7 +198,7 @@ class _CalendarPageState extends State<CalendarPage> {
               ),
               content: Container(
                 height: MediaQuery.of(context).size.height * 0.6,
-                width: MediaQuery.of(context).size.width * 0.8,
+                width: MediaQuery.of(context).size.width * 0.9,
                 child: SingleChildScrollView(
                   controller: scrollController,
                   child: Column(
@@ -136,8 +246,9 @@ class _CalendarPageState extends State<CalendarPage> {
               actions: <Widget>[
                 FlatButton(
                   child: Text('Готово'),
-                  onPressed: () {
-                    _getDataSource(durationController.text);
+                  onPressed: () async{
+                    DentaEvent newEvent = _getDataSource(nameController.text, surNameController.text, phoneController.text, durationController.text);
+                    await sendData(newEvent);
                     provider.clearTime();
                     nameController.text='';
                     surNameController.text='';
@@ -150,6 +261,11 @@ class _CalendarPageState extends State<CalendarPage> {
             );
           });
         });
+  }
+
+
+  sendData(DentaEvent createdEvent) async{
+    await Storage().saveEvent(createdEvent.toJson());
   }
 
   buildDuration(TextEditingController controller) {
@@ -285,16 +401,16 @@ class _CalendarPageState extends State<CalendarPage> {
     );
   }
 
-  List<Event> _getDataSource(value) {
+  _getDataSource(name, surName, phone, value) {
     DateTime time =
         Provider.of<TimerProvider>(context, listen: false).startTime;
     int duration = int.parse(value);
-    Provider.of<TimerProvider>(context, listen: false).addEvent(time, duration);
+    return Provider.of<TimerProvider>(context, listen: false).addEvent(name, surName, phone, time, duration);
   }
 }
 
 class MeetingDataSource extends CalendarDataSource {
-  MeetingDataSource(List<Event> source) {
+  MeetingDataSource(List<DentaEvent> source) {
     appointments = source;
   }
 
@@ -313,13 +429,4 @@ class MeetingDataSource extends CalendarDataSource {
     return appointments[index].eventName;
   }
 
-  @override
-  Color getColor(int index) {
-    return appointments[index].background;
-  }
-
-  @override
-  bool isAllDay(int index) {
-    return appointments[index].isAllDay;
-  }
 }
